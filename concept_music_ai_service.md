@@ -118,37 +118,36 @@ RFM‑сегментация применяется к событиям испо
 
 **Контекстная схема (UML use‑case, как работает предметная область; DFD не используется)**
 
-```plantuml
-@startuml
-left to right direction
-actor "Пользователь" as U
-actor "Администратор" as A
-actor "Внешний стриминг/каталог" as S
+```mermaid
+flowchart LR
+    U["Пользователь"]
+    A["Администратор"]
+    S["Внешний стриминг / каталог"]
 
-rectangle "Веб‑сервис подбора музыки" {
-  usecase "Вход/Регистрация" as UC1
-  usecase "Управление согласиями\nи приватностью" as UC2
-  usecase "Настройка предпочтений" as UC3
-  usecase "Запрос рекомендации\n(контекст/настроение)" as UC4
-  usecase "Получить объяснение\nрекомендации" as UC5
-  usecase "Обратная связь\n(лайк/пропуск)" as UC6
-  usecase "Управление каталогом\nи источниками" as UC7
-  usecase "Управление моделями\nи качеством" as UC8
-}
+    subgraph WS["Веб-сервис подбора музыки"]
+        UC1["Вход / Регистрация"]
+        UC2["Управление согласиями\nи приватностью"]
+        UC3["Настройка предпочтений"]
+        UC4["Запрос рекомендации\n(контекст / настроение)"]
+        UC5["Получить объяснение\nрекомендации"]
+        UC6["Обратная связь\n(лайк / пропуск)"]
+        UC7["Управление каталогом\nи источниками"]
+        UC8["Управление моделями\nи качеством"]
+    end
 
-U --> UC1
-U --> UC2
-U --> UC3
-U --> UC4
-U --> UC5
-U --> UC6
+    U --> UC1
+    U --> UC2
+    U --> UC3
+    U --> UC4
+    U --> UC5
+    U --> UC6
 
-A --> UC7
-A --> UC8
+    A --> UC7
+    A --> UC8
 
-UC4 --> S : "открыть трек/плейлист"
-UC7 --> S : "обновление метаданных"
-@enduml
+    UC4 -->|открыть трек / плейлист| S
+    UC7 -->|обновление метаданных| S
+
 ```
 
 ### 3.3. Аппаратная архитектура
@@ -174,55 +173,56 @@ UC7 --> S : "обновление метаданных"
 **C4‑диаграммы (код для визуализации)**
 
 *C4 Context (упрощённо):*
-```plantuml
-@startuml
-title C4 Context — Веб‑сервис подбора музыки
-actor User as "Пользователь"
-actor Admin as "Администратор"
+```mermaid
+flowchart LR
+    User["👤 Пользователь"]
+    Admin["🛠️ Администратор"]
 
-rectangle "Веб‑сервис подбора музыки" as System
-rectangle "Внешний стриминг/каталог" as External
-rectangle "Email/Push провайдер" as Notif
-rectangle "Платформа IAM/SSO" as IAM
+    System["🎵 Веб-сервис подбора музыки"]
+    External["🌐 Внешний стриминг / каталог"]
+    Notif["✉️ Email / Push провайдер"]
+    IAM["🔐 Платформа IAM / SSO"]
 
-User --> System : "запрос рекомендаций,\nобратная связь"
-Admin --> System : "модели, каталог, отчёты"
-System --> External : "поиск/открытие треков"
-System --> IAM : "аутентификация/роль"
-System --> Notif : "уведомления"
-@enduml
+    User -->|запрос рекомендаций<br/>обратная связь| System
+    Admin -->|модели, каталог<br/>отчёты| System
+
+    System -->|поиск / открытие треков| External
+    System -->|аутентификация<br/>роль| IAM
+    System -->|уведомления| Notif
+
 ```
 
 *C4 Container (упрощённо):*
-```plantuml
-@startuml
-title C4 Container — логическая структура контейнеров
-node "Kubernetes / Cloud" {
-  [Web UI] as UI
-  [API Gateway] as GW
-  [User Profile Service] as UPS
-  [Music Catalog Service] as MCS
-  [Recommendation Service] as RS
-  [Event/Analytics Service] as EAS
-  database "PostgreSQL" as PG
-  database "Vector Store" as VS
-  database "OLAP" as OLAP
-  [Object Storage] as S3
-}
+```mermaid
+flowchart LR
+    subgraph Cloud["☁️ Kubernetes / Cloud"]
+        UI["🖥️ Web UI"]
+        GW["🚪 API Gateway"]
+        UPS["👤 User Profile Service"]
+        MCS["🎶 Music Catalog Service"]
+        RS["🤖 Recommendation Service"]
+        EAS["📊 Event / Analytics Service"]
 
-UI --> GW
-GW --> UPS
-GW --> MCS
-GW --> RS
+        PG[(🗄️ PostgreSQL)]
+        VS[(🧠 Vector Store)]
+        OLAP[(📈 OLAP)]
+        S3[(🪣 Object Storage)]
+    end
 
-UPS --> PG
-MCS --> PG
-RS --> VS
-EAS --> OLAP
-EAS --> PG
-RS --> PG
-RS --> S3 : "модель/артефакты"
-@enduml
+    UI --> GW
+    GW --> UPS
+    GW --> MCS
+    GW --> RS
+
+    UPS --> PG
+    MCS --> PG
+    RS --> PG
+    RS --> VS
+    RS -->|модель / артефакты| S3
+
+    EAS --> PG
+    EAS --> OLAP
+
 ```
 
 **Компонентная схема: только данные (документы и связи)**
@@ -325,82 +325,86 @@ erDiagram
 
 ### 3.4.1 Диаграмма классов (предметная область)
 
-```plantuml
-@startuml
-class User {
-  +id: UUID
-  +createdAt: DateTime
-}
+```mermaid
+classDiagram
+    class User {
+        +UUID id
+        +DateTime createdAt
+    }
 
-class UserProfile {
-  +userId: UUID
-  +language: String
-  +country: String
-}
+    class UserProfile {
+        +UUID userId
+        +String language
+        +String country
+    }
 
-class Track {
-  +id: UUID
-  +externalId: String
-  +title: String
-  +artist: String
-}
+    class Track {
+        +UUID id
+        +String externalId
+        +String title
+        +String artist
+    }
 
-class Playlist {
-  +id: UUID
-  +userId: UUID
-  +title: String
-}
+    class Playlist {
+        +UUID id
+        +UUID userId
+        +String title
+    }
 
-class PlaylistItem {
-  +playlistId: UUID
-  +trackId: UUID
-  +position: int
-}
+    class PlaylistItem {
+        +UUID playlistId
+        +UUID trackId
+        +int position
+    }
 
-class ListenEvent {
-  +id: UUID
-  +userId: UUID
-  +trackId: UUID
-  +ts: DateTime
-  +seconds: int
-}
+    class ListenEvent {
+        +UUID id
+        +UUID userId
+        +UUID trackId
+        +DateTime ts
+        +int seconds
+    }
 
-class Feedback {
-  +id: UUID
-  +userId: UUID
-  +trackId: UUID
-  +type: FeedbackType
-}
+    class Feedback {
+        +UUID id
+        +UUID userId
+        +UUID trackId
+        +FeedbackType type
+    }
 
-enum FeedbackType {
-  LIKE
-  DISLIKE
-  SKIP
-  SAVE
-}
+    class RecommendationRequest {
+        +UUID userId
+        +String moodText
+        +String context
+    }
 
-class RecommendationRequest {
-  +userId: UUID
-  +moodText: String
-  +context: String
-}
+    class RecommendationResult {
+        +UUID requestId
+        +List~Track~ tracks
+        +Map~Track,String~ explanations
+    }
 
-class RecommendationResult {
-  +requestId: UUID
-  +tracks: List<Track>
-  +explanations: Map<Track,String>
-}
+    class FeedbackType {
+        <<enumeration>>
+        LIKE
+        DISLIKE
+        SKIP
+        SAVE
+    }
 
-User "1" -- "1" UserProfile
-User "1" -- "*" Playlist
-Playlist "1" -- "*" PlaylistItem
-PlaylistItem "*" -- "1" Track
-User "1" -- "*" ListenEvent
-ListenEvent "*" -- "1" Track
-User "1" -- "*" Feedback
-Feedback "*" -- "1" Track
-RecommendationRequest --> RecommendationResult
-@enduml
+    User "1" -- "1" UserProfile
+    User "1" -- "*" Playlist
+    Playlist "1" -- "*" PlaylistItem
+    PlaylistItem "*" -- "1" Track
+
+    User "1" -- "*" ListenEvent
+    ListenEvent "*" -- "1" Track
+
+    User "1" -- "*" Feedback
+    Feedback "*" -- "1" Track
+
+    RecommendationRequest --> RecommendationResult
+
 ```
 
 ### 3.5 Матрица Захмана
