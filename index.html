@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Music Selector MVP</title>
+    <style>
+        :root {
+            --primary: #6C5CE7;
+            --secondary: #A29BFE;
+            --bg: #0F0F13;
+            --card-bg: #1E1E24;
+            --text: #FFFFFF;
+            --text-muted: #A0A0A0;
+            --success: #00B894;
+            --danger: #FF7675;
+            --warning: #FFEAA7;
+            --yandex-red: #FF0000;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background-color: var(--card-bg);
+            min-height: 100vh;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-top: 10px;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .privacy-badge {
+            font-size: 0.7rem;
+            background: rgba(108, 92, 231, 0.2);
+            padding: 4px 8px;
+            border-radius: 12px;
+            color: var(--secondary);
+            cursor: pointer;
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Onboarding */
+        .onboarding-step h2 { margin-bottom: 10px; }
+        .onboarding-step p { color: var(--text-muted); margin-bottom: 20px; }
+        
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .tag {
+            padding: 8px 16px;
+            background: #2D2D35;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .tag.selected {
+            background: var(--primary);
+            border-color: var(--secondary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn:hover { background: #5b4cc4; }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--text-muted);
+            margin-top: 10px;
+        }
+
+        /* Yandex Music Button */
+        .btn-yandex {
+            background: #000;
+            border: 1px solid #333;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn-yandex:hover {
+            background: #1a1a1a;
+            border-color: var(--yandex-red);
+        }
+
+        .yandex-icon {
+            width: 20px;
+            height: 20px;
+            background: var(--yandex-red);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* Main Request */
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        textarea {
+            width: 100%;
+            background: #2D2D35;
+            border: 1px solid #3D3D45;
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            resize: none;
+            height: 80px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        textarea:focus { outline: 1px solid var(--primary); }
+
+        .context-chips {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .chip {
+            white-space: nowrap;
+            padding: 6px 12px;
+            background: #2D2D35;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .chip.active { background: var(--secondary); color: #000; }
+
+        /* Results */
+        .track-card {
+            background: #2D2D35;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .track-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .track-info h3 { margin: 0; font-size: 1rem; }
+        .track-info p { margin: 4px 0 0; color: var(--text-muted); font-size: 0.85rem; }
+
+        .track-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .btn-stream { background: #1DB954; color: white; }
+        .btn-like { background: #2D2D35; color: var(--text); border: 1px solid #3D3D45; }
+        .btn-dislike { background: #2D2D35; color: var(--text); border: 1px solid #3D3D45; }
+
+        .ai-explanation {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #3D3D45;
+            font-size: 0.85rem;
+            color: var(--secondary);
+            display: none;
+        }
+        
+        .ai-explanation.show { display: block; }
+        
+        .ai-badge {
+            font-size: 0.7rem;
+            background: rgba(162, 155, 254, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .toggle-explain {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        /* Privacy Modal */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+        }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #3D3D45;
+            font-size: 0.9rem;
+        }
+        .close-modal {
+            margin-top: 15px;
+            background: #3D3D45;
+        }
+
+        /* Account Status */
+        .account-status {
+            background: rgba(0, 184, 148, 0.1);
+            border: 1px solid var(--success);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+        .account-status.connected {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="logo">
+            <span>🎵</span> AI Music Fit
+        </div>
+        <div class="privacy-badge" onclick="togglePrivacy()">🛡️ Данные</div>
+    </header>
+
+    <!-- Screen 1: Onboarding -->
+    <div id="screen-onboarding" class="screen active">
+        <div class="onboarding-step">
+            <h2>Давайте настроим вкус</h2>
+            <p>Выберите 3 жанра, чтобы мы могли начать</p>
+            
+            <!-- Yandex Music Connect Button -->
+            <button class="btn btn-yandex" onclick="connectYandex()">
+                <span class="yandex-icon">Я</span>
+                Привязать аккаунт Яндекс.Музыка
+            </button>
+            
+            <div class="tags-container" id="genre-tags">
+                <div class="tag" onclick="selectTag(this)">Lo-Fi</div>
+                <div class="tag" onclick="selectTag(this)">Rock</div>
+                <div class="tag" onclick="selectTag(this)">Jazz</div>
+                <div class="tag" onclick="selectTag(this)">Electronic</div>
+                <div class="tag" onclick="selectTag(this)">Classical</div>
+                <div class="tag" onclick="selectTag(this)">Hip-Hop</div>
+                <div class="tag" onclick="selectTag(this)">Ambient</div>
+                <div class="tag" onclick="selectTag(this)">Pop</div>
+            </div>
+
+            <button class="btn" onclick="goToScreen('screen-request')">Продолжить</button>
+            <div style="margin-top: 15px; font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+                🔒 Все данные защищены
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen 2: Request -->
+    <div id="screen-request" class="screen">
+        <!-- Account Status Indicator -->
+        <div id="account-status" class="account-status">
+            <span>✅</span>
+            <span>Яндекс.Музыка подключена</span>
+        </div>
+
+        <h2>Что слушаем?</h2>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">Опишите настроение или задачу</p>
+
+        <div class="input-group">
+            <label>Ваш запрос (текст)</label>
+            <textarea id="mood-input" placeholder="Например: Нужно сосредоточиться на работе, но чтобы не было скучно..."></textarea>
+        </div>
+
+        <div class="input-group">
+            <label>Контекст</label>
+            <div class="context-chips">
+                <div class="chip" onclick="toggleChip(this)">🌅 Утро</div>
+                <div class="chip" onclick="toggleChip(this)">💼 Работа</div>
+                <div class="chip" onclick="toggleChip(this)">🏃 Спорт</div>
+                <div class="chip" onclick="toggleChip(this)">🌙 Сон</div>
+                <div class="chip" onclick="toggleChip(this)">🚗 Дорога</div>
+            </div>
+        </div>
+
+        <button class="btn" onclick="generateRecommendations()">✨ Подобрать музыку</button>
+    </div>
+
+    <!-- Screen 3: Results -->
+    <div id="screen-results" class="screen">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <h2>Подборка</h2>
+            <button class="btn-outline" style="width: auto; padding: 5px 10px; font-size: 0.8rem;" onclick="goToScreen('screen-request')">↩ Назад</button>
+        </div>
+
+        <div id="results-container">
+            <!-- Tracks will be injected here via JS -->
+        </div>
+    </div>
+
+</div>
+
+<!-- Privacy Modal -->
+<div id="privacy-modal" class="modal">
+    <div class="modal-content">
+        <h3>Управление данными</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Соответствие требованиям безопасности</p>
+        
+        <div class="data-row">
+            <span>История запросов</span>
+            <span style="color: var(--success)">Активно</span>
+        </div>
+        <div class="data-row">
+            <span>Профиль предпочтений</span>
+            <span style="color: var(--success)">Активно</span>
+        </div>
+        <div class="data-row">
+            <span>Сбор телеметрии</span>
+            <span style="color: var(--danger)">Отключено</span>
+        </div>
+        <div class="data-row">
+            <span>Интеграция с Яндекс.Музыка</span>
+            <span id="yandex-status" style="color: var(--text-muted)">Не подключено</span>
+        </div>
+
+        <button class="btn btn-outline" style="border-color: var(--danger); color: var(--danger); margin-top: 10px;">Удалить все данные</button>
+        <button class="btn close-modal" onclick="togglePrivacy()">Закрыть</button>
+    </div>
+</div>
+
+<script>
+    // State
+    let selectedGenres = [];
+    let yandexConnected = false;
+    
+    // Mock Data for Recommendations
+    const mockTracks = [
+        {
+            title: "Midnight City",
+            artist: "M83",
+            streamLink: "#",
+            explanation: "Подобрано по запросу 'энергично'. Высокий темп (120 BPM) соответствует активности 'Работа'. Похоже на ваши любимые треки в жанре Electronic."
+        },
+        {
+            title: "Weightless",
+            artist: "Marconi Union",
+            streamLink: "#",
+            explanation: "Рекомендовано для контекста 'Фокус'. Низкая энергетика, отсутствие вокала снижает когнитивную нагрузку. Жанр: Ambient."
+        },
+        {
+            title: "Instant Crush",
+            artist: "Daft Punk",
+            streamLink: "#",
+            explanation: "Гибридная рекомендация: контентное сходство с вашим seed-плейлистом + высокая оценка другими пользователями в сегменте 'Вечер'."
+        }
+    ];
+
+    // Navigation
+    function goToScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    // Onboarding Logic
+    function selectTag(el) {
+        el.classList.toggle('selected');
+    }
+
+    // Context Chips
+    function toggleChip(el) {
+        el.classList.toggle('active');
+    }
+
+    // Connect Yandex Music
+    function connectYandex() {
+        const btn = document.querySelector('.btn-yandex');
+        btn.innerHTML = '⏳ Подключение...';
+        
+        setTimeout(() => {
+            yandexConnected = true;
+            btn.innerHTML = '✅ Яндекс.Музыка подключена';
+            btn.style.background = '#1a1a1a';
+            btn.style.borderColor = '#00B894';
+            
+            // Show status on request screen
+            document.getElementById('account-status').classList.add('connected');
+            document.getElementById('yandex-status').innerText = 'Подключено';
+            document.getElementById('yandex-status').style.color = '#00B894';
+            
+            alert('Аккаунт Яндекс.Музыка успешно привязан! Теперь мы можем импортировать ваши плейлисты.');
+        }, 1000);
+    }
+
+    // Generate Recommendations (Mock AI)
+    function generateRecommendations() {
+        const btn = document.querySelector('#screen-request .btn');
+        const originalText = btn.innerText;
+        btn.innerText = "🤖 Анализ контекста...";
+        btn.disabled = true;
+
+        setTimeout(() => {
+            const container = document.getElementById('results-container');
+            container.innerHTML = '';
+
+            mockTracks.forEach(track => {
+                const card = document.createElement('div');
+                card.className = 'track-card';
+                card.innerHTML = `
+                    <div class="track-header">
+                        <div class="track-info">
+                            <h3>${track.title}</h3>
+                            <p>${track.artist}</p>
+                        </div>
+                        <div style="font-size: 1.2rem;">🎵</div>
+                    </div>
+                    
+                    <div class="track-actions">
+                        <button class="action-btn btn-stream" onclick="window.open('${track.streamLink}', '_blank')">
+                            ▶ Слушать
+                        </button>
+                        <button class="action-btn btn-like" onclick="feedback(this, 'like')">👍</button>
+                        <button class="action-btn btn-dislike" onclick="feedback(this, 'dislike')">👎</button>
+                    </div>
+
+                    <div class="toggle-explain" onclick="toggleExplanation(this)">❓ Почему этот трек?</div>
+                    <div class="ai-explanation">
+                        <div><span class="ai-badge">AI Insight</span>${track.explanation}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            btn.innerText = originalText;
+            btn.disabled = false;
+            goToScreen('screen-results');
+        }, 1500);
+    }
+
+    // Toggle Explanation
+    function toggleExplanation(el) {
+        const explanation = el.nextElementSibling;
+        explanation.classList.toggle('show');
+        el.innerText = explanation.classList.contains('show') ? 'Скрыть объяснение' : '❓ Почему этот трек?';
+    }
+
+    // Feedback
+    function feedback(el, type) {
+        const color = type === 'like' ? '#00B894' : '#FF7675';
+        el.style.background = color;
+        el.style.color = '#000';
+    }
+
+    // Privacy Modal
+    function togglePrivacy() {
+        const modal = document.getElementById('privacy-modal');
+        modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+    }
+</script>
+
+</body>
+</html>
